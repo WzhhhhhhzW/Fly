@@ -1,0 +1,20 @@
+{
+  "objective": "在1小时内完成 M0 设备与接口确认",
+  "goal_started_at": "2026-10-11T20:41:31+08:00",
+  "deadline": "2026-10-11T21:41:31+08:00",
+  "updated_at": "2026-10-11T20:44:34.847705+08:00",
+  "status": "in_progress",
+  "M0_passed": false,
+  "application_protocol": "v0.1 implemented; software tests passed",
+  "physical_interfaces_frozen": false,
+  "missing_evidence": [
+    "实际设备型号及固件版本",
+    "实物尺寸与全桨防护检查",
+    "全部模块供电及负载测试",
+    "相机/定位实际数据",
+    "车机地面站实机联通及飞控有线接口",
+    "就绪及一键启动实际集成",
+    "最终接线和版本冻结"
+  ],
+  "next_action": "等待实际设备清单与测量/通电结果，逐项核对并执行实机联通测试"
+}

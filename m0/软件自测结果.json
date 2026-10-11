@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-11T20:44:34.846699+08:00",
+  "scope": "软件协议及笔记本本地回环；不证明实机供电、车机通信或飞行能力",
+  "unit_tests_passed": true,
+  "unit_test_log": "test_bad_version_and_boolean_sequence (test_protocol.ProtocolTests.test_bad_version_and_boolean_sequence) ... ok\ntest_duplicate_start (test_protocol.ProtocolTests.test_duplicate_start) ... ok\ntest_invalid_sender (test_protocol.ProtocolTests.test_invalid_sender) ... ok\ntest_missing_ack_reference (test_protocol.ProtocolTests.test_missing_ack_reference) ... ok\ntest_oversize (test_protocol.ProtocolTests.test_oversize) ... ok\ntest_roundtrip (test_protocol.ProtocolTests.test_roundtrip) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n",
+  "loopback": {
+    "role": "probe",
+    "destination": [
+      "127.0.0.1",
+      14560
+    ],
+    "sent": 20,
+    "acknowledged": 20,
+    "rtt_max_ms": 0.413,
+    "scope": "PING/ACK only; not power, positioning or flight verification"
+  },
+  "listener_exit_code": 0,
+  "probe_exit_code": 0,
+  "hardware_verified": false,
+  "M0_passed": false
+}
