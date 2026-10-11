@@ -1,0 +1,14 @@
+# 临时渲染及运行环境
+tmp/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+node_modules/
+
+# 本地凭据
+.env
+.env.*
+!.env.example
+*.pem
+*.key
