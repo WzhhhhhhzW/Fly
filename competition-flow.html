@@ -1,0 +1,206 @@
+<div id="competition-flow-v1">
+  <style>
+    #competition-flow-v1 { color:var(--foreground); }
+    #competition-flow-v1 .flow-header { padding-right:96px; margin-bottom:16px; }
+    #competition-flow-v1 .flow-summary { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:12px 0 8px; }
+    #competition-flow-v1 .flow-board { position:relative; margin:20px 0; }
+    #competition-flow-v1 .flow-edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+    #competition-flow-v1 .flow-day { position:relative; margin-bottom:32px; }
+    #competition-flow-v1 .day-label { margin:0 0 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    #competition-flow-v1 .node-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+    #competition-flow-v1 .flow-node { position:relative; min-width:0; background:var(--background); }
+    #competition-flow-v1 .node-caption { margin:8px 0; display:flex; gap:8px; flex-wrap:wrap; }
+    #competition-flow-v1 .flow-detail { margin-top:16px; }
+    #competition-flow-v1 .detail-heading { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    #competition-flow-v1 .detail-row { display:grid; grid-template-columns:60px minmax(0,1fr); gap:10px; margin:8px 0; }
+    #competition-flow-v1 .done-mark { color:var(--viz-series-1); }
+    #competition-flow-v1 .node-check { margin-top:10px; }
+    #competition-flow-v1 .flow-edges path { fill:none; stroke:var(--border); stroke-width:1.5; }
+    #competition-flow-v1 .flow-edges path.completed { stroke:var(--viz-series-1); }
+    #competition-flow-v1 .flow-edges .optional-edge { stroke-dasharray:4 4; }
+    @media(max-width:580px) {
+      #competition-flow-v1 .node-row { grid-template-columns:1fr; gap:24px; padding:0 12px; }
+      #competition-flow-v1 .flow-header { padding-right:0; }
+      #competition-flow-v1 .flow-day { margin-bottom:36px; }
+    }
+  </style>
+  <div class="flow-header">
+    <h2>84小时实施流程</h2>
+    <div class="text-muted">三人协作 · 基础任务优先 · 动态起降选做</div>
+  </div>
+  <div class="flow-summary" aria-live="polite">
+    <span id="flow-count" class="tabular-nums">已完成 0 / 9 个节点</span>
+    <span id="flow-core" class="text-small text-muted">基础路线 0 / 7 · 提升路线 0 / 2</span>
+  </div>
+  <div id="flow-progress" class="progress" role="progressbar" aria-label="工程节点完成进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="progress-bar" style="width:0%"></div>
+  </div>
+  <div class="flow-board" aria-label="节点依赖流程图">
+    <svg class="flow-edges" aria-hidden="true"></svg>
+    <section class="flow-day">
+      <div class="day-label"><span>第一天</span><span class="text-small text-muted">T＋0—24小时 · 打牢基础</span></div>
+      <div class="node-row" data-day="1"></div>
+    </section>
+    <section class="flow-day">
+      <div class="day-label"><span>第二天</span><span class="text-small text-muted">T＋24—48小时 · 抛投闭环</span></div>
+      <div class="node-row" data-day="2"></div>
+    </section>
+    <section class="flow-day">
+      <div class="day-label"><span>第三天</span><span class="viz-badge">提升路线</span><span class="text-small text-muted">T＋48—66小时 · 动态起降</span></div>
+      <div class="node-row" data-day="3"></div>
+    </section>
+    <section class="flow-day">
+      <div class="day-label"><span>第四天</span><span class="text-small text-muted">T＋66—84小时 · 稳定性与交付</span></div>
+      <div class="node-row" data-day="4"></div>
+    </section>
+  </div>
+  <div class="viz-row text-small text-muted"><span>实线：基础路线</span><span>虚线：动态起降提升路线</span><span>勾选表示工程验收通过，不代表已获得比赛分数</span></div>
+  <div class="flow-detail"><div class="card" aria-live="polite">
+    <div class="detail-heading"><span id="flow-detail-name">M0 设备与接口确认</span><span id="flow-detail-status" class="viz-badge">待完成</span></div>
+    <div class="detail-row"><span class="text-muted">期限</span><span id="flow-detail-deadline"></span></div>
+    <div class="detail-row"><span class="text-muted">负责</span><span id="flow-detail-owner"></span></div>
+    <div class="detail-row"><span class="text-muted">验收</span><span id="flow-detail-gate"></span></div>
+    <div class="detail-row"><span class="text-muted">未通过</span><span id="flow-detail-fallback"></span></div>
+  </div></div>
+  <script>
+    (() => {
+      const root=document.getElementById('competition-flow-v1');
+      const nodes=[
+        {id:'M0',day:1,h:4,title:'设备与接口确认',owner:'硬件主导 · 三人共同确认',gate:'尺寸与全桨防护合规；供电、通信可用；启动流程、字段与版本冻结。',fallback:'先修基础条件，暂不进入伴飞联调。'},
+        {id:'M1',day:1,h:12,title:'带载循线一圈',owner:'硬件控制 · 机械载荷与平台',gate:'带载连续5圈不停、不脱线，正确回A停车；每圈≤90秒，记录B/D/A时刻。',fallback:'排查底盘、循线与速度闭环，暂停上层加功能。'},
+        {id:'M2',day:1,h:24,title:'自动起降与遥测',owner:'硬件飞控 · 软件流程与地面站',gate:'车无线触发自动起飞；巡航高度140—160cm，稳定悬停3秒，回H落地；连续3次成功，真实遥测可见。',fallback:'第二天先完成飞行底座，暂停动态起降。'},
+        {id:'M3',day:2,h:36,title:'B前稳定伴飞',owner:'软件主导 · 硬件协同',gate:'连续3次在B前形成伴飞；直线与弯道均跟随，位置、速度、航向近似同步。',fallback:'核视场、延迟、坐标方向及车速，逐项调整。'},
+        {id:'M4',day:2,h:48,title:'完整抛投闭环',owner:'三人联调',gate:'连续3次成功：D前软物最终留圈内，机回H、车回A；车全程不停，整套任务≤90秒。',fallback:'停止投入移动起降，优先把基础任务做完整。'},
+        {id:'M5',day:3,h:56,title:'固定平台起降',optional:true,owner:'软件流程 · 机械落架 · 硬件飞控',gate:'连续3次自主落平台、稳定停留5秒、再次起飞；无人工介入。',fallback:'排查机械接触、落地判定和重新解锁；不进入移动着陆。'},
+        {id:'M6',day:3,h:66,title:'移动平台起降',optional:true,owner:'三人联调',gate:'B≤15秒、D前落车、车行进中稳定停留≥5秒，再起飞回H；车不停、整圈≤90秒并回A。',fallback:'T＋66小时仍不稳就冻结提升项，保留稳定抛投版本，转向M7。'},
+        {id:'M7',day:4,h:78,title:'稳定性与报告',owner:'三人测试与写作 · 软件统一版本',gate:'基础近10次≥8次完整成功且最近连续3次成功；地面站离线运行；报告有真实测试表和图。',fallback:'优先修已有模块故障，不增加新硬件或新架构。'},
+        {id:'M8',day:4,h:84,title:'最终模拟测评',owner:'三人共同验收',gate:'冷启动执行已计划的测评流程；换电≤2分钟；实物、代码、参数与报告一致。',fallback:'使用已验证的稳定模式，明确记录未完成项。'}
+      ];
+      const valid=new Set(nodes.map(n=>n.id));
+      let state={done:[],selected:'M0'};
+      const readState=value=>{
+        const saved=value?.modelContent;
+        if(saved?.type!=='competition-flow-v1')return;
+        state.done=Array.isArray(saved.completedNodes)?[...new Set(saved.completedNodes.filter(id=>valid.has(id)))]:[];
+        const selected=value?.privateContent?.selected;
+        state.selected=valid.has(selected)?selected:'M0';
+      };
+      readState(window.openai?.widgetState);
+      const save=()=>{
+        const api=window.openai;
+        if(typeof api?.setWidgetState!=='function')return;
+        const completed=nodes.filter(n=>state.done.includes(n.id));
+        try {
+          Promise.resolve(api.setWidgetState({modelContent:{type:'competition-flow-v1',completedNodes:completed.map(n=>n.id),completedTitles:completed.map(n=>n.title),totalNodes:9,scope:'工程验收进度，并非现场得分'},privateContent:{selected:state.selected}})).catch(()=>{});
+        }catch(_error){}
+      };
+      nodes.forEach(n=>{
+        const item=document.createElement('div');
+        item.className='flow-node';item.dataset.node=n.id;
+        const button=document.createElement('button');
+        button.type='button';button.className='btn btn-block';button.dataset.select=n.id;
+        button.textContent=n.id+' '+n.title;button.setAttribute('aria-pressed','false');
+        const caption=document.createElement('div');caption.className='node-caption text-small';
+        const time=document.createElement('span');time.className='tabular-nums';time.textContent='T＋'+n.h+'小时';
+        const status=document.createElement('span');status.dataset.status=n.id;status.className='text-muted';status.textContent='待完成';
+        caption.append(time,status);
+        const checkWrap=document.createElement('div');checkWrap.className='node-check';
+        const label=document.createElement('label');label.className='form-check';
+        const check=document.createElement('input');check.type='checkbox';check.className='form-check-input';check.dataset.check=n.id;check.setAttribute('aria-label',n.id+' '+n.title+' 已验收完成');
+        const labelText=document.createElement('span');labelText.className='form-check-label';labelText.textContent='已验收完成';
+        label.append(check,labelText);checkWrap.append(label);item.append(button,caption,checkWrap);
+        root.querySelector('[data-day="'+n.day+'"]').append(item);
+      });
+      const connections=[['M0','M1',false],['M1','M2',false],['M2','M3',false],['M3','M4',false],['M4','M7',false],['M4','M5',true],['M5','M6',true],['M6','M7',true],['M7','M8',false]];
+      function drawEdges(){
+        const board=root.querySelector('.flow-board');
+        const svg=root.querySelector('.flow-edges');
+        const bounds=board.getBoundingClientRect();
+        svg.setAttribute('viewBox','0 0 '+bounds.width+' '+bounds.height);
+        svg.replaceChildren();
+        const ns='http://www.w3.org/2000/svg';
+        const defs=document.createElementNS(ns,'defs');
+        ['pending','done'].forEach(kind=>{
+          const marker=document.createElementNS(ns,'marker');
+          marker.id='flow-arrow-'+kind;
+          marker.setAttribute('viewBox','0 0 8 8');marker.setAttribute('refX','8');marker.setAttribute('refY','4');
+          marker.setAttribute('markerWidth','6');marker.setAttribute('markerHeight','6');marker.setAttribute('orient','auto');
+          const arrow=document.createElementNS(ns,'polygon');arrow.setAttribute('points','0,0 8,4 0,8');
+          arrow.setAttribute('fill',kind==='done'?'var(--viz-series-1)':'var(--border)');
+          marker.append(arrow);defs.append(marker);
+        });
+        svg.append(defs);
+        connections.forEach(([from,to,optional])=>{
+          const a=root.querySelector('[data-select="'+from+'"]').getBoundingClientRect();
+          const b=root.querySelector('[data-select="'+to+'"]').getBoundingClientRect();
+          const sameRow=Math.abs(a.top-b.top)<4;
+          let d;
+          if(sameRow){
+            const x1=a.right-bounds.left,y1=a.top+a.height/2-bounds.top;
+            const x2=b.left-bounds.left,y2=b.top+b.height/2-bounds.top;
+            d='M '+x1+' '+y1+' L '+x2+' '+y2;
+          }else if(from==='M4'&&to==='M7'){
+            const narrow=bounds.width<=580;
+            const x1=a.right-bounds.left,y1=a.top+a.height/2-bounds.top;
+            const x2=b.right-bounds.left,y2=b.top+b.height/2-bounds.top;
+            const side=narrow?bounds.width-2:bounds.width-6;
+            d='M '+x1+' '+y1+' L '+side+' '+y1+' L '+side+' '+y2+' L '+x2+' '+y2;
+          }else{
+            const x1=a.left+a.width/2-bounds.left,y1=a.bottom-bounds.top;
+            const x2=b.left+b.width/2-bounds.left,y2=b.top-bounds.top;
+            const mid=y1+(y2-y1)*0.45;
+            d='M '+x1+' '+y1+' C '+x1+' '+mid+' '+x2+' '+mid+' '+x2+' '+y2;
+          }
+          const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',d);
+          path.dataset.from=from;path.dataset.to=to;
+          if(optional)path.classList.add('optional-edge');
+          const completed=state.done.includes(from)&&state.done.includes(to);
+          if(completed)path.classList.add('completed');
+          path.setAttribute('marker-end','url(#flow-arrow-'+(completed?'done':'pending')+')');
+          svg.append(path);
+        });
+      }
+      function render(){
+        nodes.forEach(n=>{
+          const done=state.done.includes(n.id);
+          root.querySelector('[data-check="'+n.id+'"]').checked=done;
+          root.querySelector('[data-select="'+n.id+'"]').setAttribute('aria-pressed',String(state.selected===n.id));
+          const status=root.querySelector('[data-status="'+n.id+'"]');
+          status.textContent=done?'✓ 已完成':'待完成';status.className=done?'done-mark':'text-muted';
+        });
+        root.querySelector('#flow-count').textContent='已完成 '+state.done.length+' / 9 个节点';
+        const core=nodes.filter(n=>!n.optional&&state.done.includes(n.id)).length;
+        const optional=state.done.length-core;
+        root.querySelector('#flow-core').textContent='基础路线 '+core+' / 7 · 提升路线 '+optional+' / 2';
+        const percentage=Math.round(state.done.length/9*100);
+        const progress=root.querySelector('#flow-progress');
+        const bar=progress.querySelector('.progress-bar');const previous=bar.style.width;
+        progress.setAttribute('aria-valuenow',String(percentage));bar.style.width=percentage+'%';
+        if(previous!==bar.style.width&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches&&typeof bar.animate==='function')bar.animate([{width:previous},{width:bar.style.width}],{duration:300,easing:'ease-out'});
+        const selected=nodes.find(n=>n.id===state.selected);
+        root.querySelector('#flow-detail-name').textContent=selected.id+' '+selected.title;
+        root.querySelector('#flow-detail-status').textContent=state.done.includes(selected.id)?'已验收完成':'待完成';
+        root.querySelector('#flow-detail-deadline').textContent='T＋'+selected.h+'小时'+(selected.optional?' · 提升项':'');
+        root.querySelector('#flow-detail-owner').textContent=selected.owner;
+        root.querySelector('#flow-detail-gate').textContent=selected.gate;
+        root.querySelector('#flow-detail-fallback').textContent=selected.fallback;
+        requestAnimationFrame(drawEdges);
+      }
+      root.addEventListener('click',event=>{
+        const button=event.target.closest('[data-select]');if(!button)return;
+        state.selected=button.dataset.select;render();save();
+      });
+      root.addEventListener('change',event=>{
+        const id=event.target.dataset.check;if(!valid.has(id))return;
+        state.done=event.target.checked?[...new Set([...state.done,id])]:state.done.filter(x=>x!==id);
+        state.selected=id;render();save();
+      });
+      window.addEventListener('openai:set_globals',event=>{
+        const incoming=event.detail?.globals?.widgetState;if(incoming===undefined)return;
+        readState(incoming);render();
+      });
+      new ResizeObserver(drawEdges).observe(root.querySelector('.flow-board'));
+      render();
+    })();
+  </script>
+</div>
