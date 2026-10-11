@@ -1,6 +1,7 @@
 """Safe UDP PING/ACK only: never sends START or commands flight hardware."""
 import argparse
 import json
+import math
 import socket
 import time
 import uuid
@@ -77,10 +78,10 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error('port must be 1..65535')
-    if args.role == 'probe' and (args.count < 1 or args.timeout <= 0):
-        parser.error('positive count and timeout required')
-    if args.role == 'listen' and args.duration <= 0:
-        parser.error('positive duration required')
+    if args.role == 'probe' and (args.count < 1 or not math.isfinite(args.timeout) or args.timeout <= 0):
+        parser.error('positive count and finite positive timeout required')
+    if args.role == 'listen' and (not math.isfinite(args.duration) or args.duration <= 0):
+        parser.error('finite positive duration required')
     return listen(args) if args.role == 'listen' else probe(args)
 
 if __name__ == '__main__':

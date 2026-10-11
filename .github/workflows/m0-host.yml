@@ -1,0 +1,35 @@
+name: M0 host checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-checks:
+    name: M0 / ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Record exact tested commit
+        run: git rev-parse HEAD
+      - name: Check whitespace
+        run: git show --format= --check HEAD
+      - name: Compile Python sources
+        run: python -m compileall -q m0
+      - name: Run host tests
+        run: python -m unittest discover -s m0 -v
