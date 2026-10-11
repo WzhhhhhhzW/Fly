@@ -1,5 +1,6 @@
 """M0 application envelope; validation does not authorize vehicle actions."""
 import json
+import math
 import time
 
 VERSION = 1
@@ -46,10 +47,24 @@ def encode(message):
         raise ValueError('packet too large')
     return data
 
+def _reject_constant(value):
+    raise ValueError('non-finite number')
+
+def _finite_float(value):
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError('non-finite number')
+    return number
+
 def decode(data):
     if len(data) > MAX_BYTES:
         raise ValueError('packet too large')
-    return validate(json.loads(data.decode('utf-8')))
+    try:
+        message = json.loads(data.decode('utf-8'), parse_constant=_reject_constant,
+                             parse_float=_finite_float)
+    except RecursionError as exc:
+        raise ValueError('packet nesting too deep') from exc
+    return validate(message)
 
 class StartDeduplicator:
     """Application test helper; not a flight-ready startup state machine."""

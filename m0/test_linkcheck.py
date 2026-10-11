@@ -79,7 +79,11 @@ class LoopbackTests(unittest.TestCase):
     def stop_listener(process):
         if process.poll() is None:
             process.terminate()
-        process.communicate(timeout=5)
+        try:
+            process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate(timeout=5)
 
     def test_listener_survives_malformed_packets(self):
         process, port = self.start_listener()
